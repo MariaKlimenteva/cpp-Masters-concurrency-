@@ -123,19 +123,19 @@ int main() {
   ThreadSafeQueue queue;
   std::mutex cout_mutex;
 
-  std::vector<std::thread> consumers;
-  for (int i = 0; i < nthreads; ++i)
-    consumers.emplace_back(consumer_thread_func, std::ref(queue), std::ref(cout_mutex));
-
   try {
+    std::vector<std::jthread> consumers;
+    for (int i = 0; i < nthreads; ++i) {
+      consumers.emplace_back(consumer_thread_func, std::ref(queue), 
+        std::ref(cout_mutex));
+    }
     test_queue(queue, ntasks);
-
-    for (int i = 0; i < nthreads; ++i)
-      consumers[i].join();
-
-    std::cout << "\nJoined\n";
-    return 0;
-  } catch (std::exception &e) {
+  } 
+  
+  
+  catch (std::exception &e) {
     std::cout << "\n" << e.what() << "\n";
   } 
+  std::cout << "\nJoined\n";
+  return 0;
 }
