@@ -35,26 +35,24 @@ void safe_push(task_t &&t) {
   task_queue.push(std::move(t));
 }
 
-task_t safe_pop() {
+bool safe_pop(task_t &out) {
   std::lock_guard<std::mutex> lk{task_queue_mutex};
-  task_t cur = std::move(task_queue.front());
+  if (task_queue.empty()) {
+    return false;
+  }
+  out = std::move(task_queue.front());
   task_queue.pop();
-  return cur;
-}
-
-bool safe_empty() {
-  std::lock_guard<std::mutex> lk{task_queue_mutex};
-  return task_queue.empty();
+  return true;
 }
 
 void consumer_thread_func() {
   try {
     for (;;) {
-      if (safe_empty()) {
+      task_t cur;
+      if (!safe_pop(cur)) {
         std::this_thread::yield();
         continue;
       }
-      task_t cur = safe_pop();
       int res = std::move(cur)();
       if (res == -1) {
         task_t sentinel{[] { return -1; }};
